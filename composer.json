@@ -1,0 +1,56 @@
+{
+  "name": "aldeebhasan/laravel-smart-cache",
+  "description": "smart, nice, easy to use package to build a fancy mails to your laravel project and reduce creating a new template time",
+  "type": "library",
+  "version": "1.0.0",
+  "license": "MIT",
+  "keywords": [
+    "mail",
+    "mail template",
+    "fancy mail",
+    "laravel-mail",
+    "email",
+    "laravel"
+  ],
+  "authors": [
+    {
+      "name": "Hasan Deeb",
+      "email": "aldeeb.91@gmail.com",
+      "homepage": "https://hasan-deeb.com"
+    }
+  ],
+  "minimum-stability": "dev",
+  "autoload": {
+    "psr-4": {
+      "Aldeebhasan\\LaravelSmartCache\\": "src/"
+    },
+    "files": [
+      "src/Utilities/helpers.php"
+    ]
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Aldeebhasan\\LaravelSmartCache\\Test\\": "tests/"
+    }
+  },
+  "require": {
+    "php": ">=8.1"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^9.6",
+    "laravel/framework": "^10.0",
+    "orchestra/testbench": "8.x-dev"
+  },
+  "extra": {
+    "laravel": {
+      "providers": [
+        "LaravelSmartCacheProvider"
+      ],
+      "aliases": {
+      }
+    }
+  },
+  "scripts": {
+    "fix": "php-cs-fixer fix src"
+  }
+}
