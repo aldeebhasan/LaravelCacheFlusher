@@ -1,6 +1,6 @@
-Laravel Smart Cache
+Laravel Cache Flusher
 =====
-A smart, nice, easy to use package to build a fancy mails to your laravel project and reduce creating a new template time
+A lightweight package to manage the cache operations and clear invalidated caches when the related or cached data are changed
 
 Installation
 ------------
@@ -16,7 +16,7 @@ Basic Usage
 
 ## License
 
-Laravel Fancy Mail package is licensed under [The MIT License (MIT)](LICENSE).
+Laravel Cache Flusher package is licensed under [The MIT License (MIT)](LICENSE).
 
 ## Security contact information
 
