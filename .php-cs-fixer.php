@@ -150,7 +150,7 @@ $rules = [
 
 $finder = Finder::create()
     ->in([
-        __DIR__.'/src',
+        __DIR__ . '/src',
         __DIR__.'/config',
         __DIR__.'/tests',
     ])
