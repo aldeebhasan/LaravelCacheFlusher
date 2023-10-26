@@ -2,6 +2,18 @@ Laravel Cache Flusher
 =====
 A lightweight package to invalidate cache entries automatically when the cached data changed.
 
+
+Why
+-----------
+The current cache management system provided by laravel is great and satisfiable.
+To handle the cache invalidation when data update,
+you can do that manually or you may group your cache entries under tags and do invalidation by tags (like Redis).
+Even with tagging, it becomes difficult to handle all of tags spread all over the code base when the project get larger.
+
+This package provides an easy way to track the changes over models and do an automatic invalidation in your behave.
+Just define the relation between your cache and models and your life will become easier.
+
+
 Installation
 ------------
 
@@ -43,12 +55,15 @@ in your .env file.
 The most important part in our package.
 Here you can specify the cache keys along with the models that cause their invalidation.
 
-In the following example, the `store_info` will be invalidated
-if Product or Category changed (create|update|delete)
+In the following example,
+the `store_info`,`store_info.categories` will be invalidated when Category model changed (create|update|delete)
+the `store_info`,`store_info.products` will be invalidated when Product model changed (create|update|delete)
 
 ```php
  'mapping' => [
-    'store_info'  =>  [ Product::class, Category::class ]
+    'store_info'  =>  [ Product::class, Category::class ],
+    'store_info.categories'  =>  [  Category::class ],
+    'store_info.products'  =>  [  Product::class ],
  ]
 ```
 
