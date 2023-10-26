@@ -22,8 +22,7 @@ abstract class TestCase extends BaseTestCase
 
     protected function getEnvironmentSetUp($app)
     {
-        $app['config']->set('smart-cache.enabled', true);
-        $app['config']->set('smart-cache.driver', 'file');
+        $app['config']->set('cache-flusher.enabled', true);
 
     }
 }

@@ -45,9 +45,11 @@ class LaravelCacheFlusherProvider extends ServiceProvider
             );
 
             Event::listen(KeyWritten::class, function (KeyWritten $event) {
+                dump('KeyWritten');
                 CacheFlusher::put($event->key);
             });
             Event::listen(KeyForgotten::class, function (KeyForgotten $event) {
+                dump('KeyForgotten');
                 CacheFlusher::forget($event->key);
             });
         }

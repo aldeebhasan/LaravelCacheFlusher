@@ -13,25 +13,24 @@ class CacheFlusherManager
 
     public function initialize(): void
     {
-        $this->mapping = config('smart-cache.mapping', []);
-        $driver = config('smart-cache.driver', 'file');
+        $this->mapping = config('cache-flusher.mapping', []);
+        $driver = config('cache-flusher.driver', 'file');
         $this->cacheManager = cache()->driver($driver);
-
     }
 
     public function enabled(): bool
     {
-        return config('smart-cache.enabled', false);
+        return config('cache-flusher.enabled', false);
     }
 
     private function getKeys(): array
     {
-        return Storage::json('smart-cache/cache.json') ?? [];
+        return Storage::json('cache-flusher/cache.json') ?? [];
     }
 
     private function saveKeys($data): void
     {
-        Storage::disk('local')->put('smart-cache/cache.json', json_encode($data));
+        Storage::disk('local')->put('cache-flusher/cache.json', json_encode(array_values($data)));
     }
 
     public function put(string $key): void
@@ -63,8 +62,9 @@ class CacheFlusherManager
     {
         $keys = $this->getKeys();
         foreach ($this->mapping as $key => $map) {
-            if (in_array($model, $map)) {
+            if (in_array($model, $map) && !$this->needToCoolDown($model)) {
                 $this->processSingle($keys, $key);
+                $this->configureCoolDown($model);
             }
         }
     }
@@ -75,5 +75,31 @@ class CacheFlusherManager
         foreach ($matches as $key) {
             $this->cacheManager->forget($key);
         }
+    }
+
+    private function needToCoolDown($model): bool
+    {
+        $modelClassName = last(explode('\\', $model));
+        $cacheCooldown = config('cache-flusher.cool-down');
+        if (!$cacheCooldown) return false;
+
+        $invalidatedAt = $this->cacheManager->get("$modelClassName-cooldown");
+        if (!$invalidatedAt) return false;
+
+        return now()->diffInSeconds($invalidatedAt) < $cacheCooldown;
+
+    }
+
+    private function configureCoolDown($model): void
+    {
+        $modelClassName = last(explode('\\', $model));
+        $cacheCooldown = config('cache-flusher.cool-down');
+        if (!$cacheCooldown) return;
+
+        $this->cacheManager->put(
+            "$modelClassName-cooldown",
+            now()->addSeconds($cacheCooldown)->toDateTimeString()
+        );
+
     }
 }

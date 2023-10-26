@@ -6,7 +6,6 @@ use Aldeebhasan\LaravelCacheFlusher\CacheFlusherManager;
 use Illuminate\Support\Facades\Facade;
 
 /**
- * @method static CacheFlusherManager getItemBasedRecommender()
  * @method static void initialize()
  * @method static bool enabled()
  * @method static void put(string $key)
