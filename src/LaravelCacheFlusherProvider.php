@@ -25,7 +25,7 @@ class LaravelCacheFlusherProvider extends ServiceProvider
 
         $this->mergeConfigFrom(
             __DIR__.'/../config/cache-flusher.php',
-            'cache-flusher'
+            'cache-flusher-config'
         );
 
         $this->app->singleton('cache-flusher', CacheFlusherManager::class, );
@@ -45,11 +45,9 @@ class LaravelCacheFlusherProvider extends ServiceProvider
             );
 
             Event::listen(KeyWritten::class, function (KeyWritten $event) {
-                dump('KeyWritten');
                 CacheFlusher::put($event->key);
             });
             Event::listen(KeyForgotten::class, function (KeyForgotten $event) {
-                dump('KeyForgotten');
                 CacheFlusher::forget($event->key);
             });
         }

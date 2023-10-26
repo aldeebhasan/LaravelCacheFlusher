@@ -8,6 +8,7 @@ use Aldeebhasan\LaravelCacheFlusher\Test\TestCase;
 use Illuminate\Contracts\Cache\Repository;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\WithFaker;
+use Mockery\MockInterface;
 
 class CacheFlusherTest extends TestCase
 {
@@ -87,4 +88,62 @@ class CacheFlusherTest extends TestCase
         $storeKeys = $this->getStoredKeys();
         self::assertEquals(['test', 'test_2.v2.1'], $storeKeys);
     }
+
+    public function test_check_processes_of__multi_model_create()
+    {
+        $this->setCustomConfig([
+            'mapping' => [
+                '(test\..+|test_2\.v1\.*)' => [Model::class],
+            ],
+            'cool-down' => '5'
+        ]);
+
+
+        CacheFlusher::shouldReceive('process')->twice();
+        event('eloquent.created: ' . Model::class, Model::class);
+        event('eloquent.created: ' . Model::class, Model::class);
+
+    }
+
+    public function test_cool_down_after_multi_model_create()
+    {
+        $this->setCustomConfig([
+            'mapping' => [
+                '(test\..+|test_2\.v1\.*)' => [Model::class],
+            ],
+            'cool-down' => '5'
+        ]);
+
+        $mock = $this->partialMock(
+            CacheFlusherManager::class,
+            function (MockInterface $mock) {
+                $mock->shouldReceive('handleSingleKey')->once();
+            });
+        $mock->initialize();
+        $mock->process(Model::class);
+        $mock->process(Model::class);
+    }
+
+    public function test_cool_down_flush()
+    {
+        $this->setCustomConfig([
+            'mapping' => [
+                '(test\..+|test_2\.v1\.*)' => [Model::class],
+            ],
+            'cool-down' => '1'
+        ]);
+
+        $mock = $this->partialMock(
+            CacheFlusherManager::class,
+            function (MockInterface $mock) {
+                $mock->shouldReceive('handleSingleKey')->twice();
+            });
+        $mock->initialize();
+        $mock->process(Model::class);
+        $mock->process(Model::class);
+
+        sleep(2);
+        $mock->process(Model::class);
+    }
+
 }

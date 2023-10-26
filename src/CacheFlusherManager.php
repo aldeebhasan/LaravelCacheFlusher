@@ -60,16 +60,18 @@ class CacheFlusherManager
 
     public function process(string $model): void
     {
+        if ($this->needToCoolDown($model)) return;
+
         $keys = $this->getKeys();
         foreach ($this->mapping as $key => $map) {
-            if (in_array($model, $map) && !$this->needToCoolDown($model)) {
-                $this->processSingle($keys, $key);
+            if (in_array($model, $map)) {
+                $this->handleSingleKey($keys, $key);
                 $this->configureCoolDown($model);
             }
         }
     }
 
-    private function processSingle($keys, $patten): void
+    public function handleSingleKey($keys, $patten): void
     {
         $matches = preg_grep("/^$patten/i", $keys);
         foreach ($matches as $key) {
@@ -85,7 +87,6 @@ class CacheFlusherManager
 
         $invalidatedAt = $this->cacheManager->get("$modelClassName-cooldown");
         if (!$invalidatedAt) return false;
-
         return now()->diffInSeconds($invalidatedAt) < $cacheCooldown;
 
     }

@@ -1,6 +1,6 @@
 {
   "name": "aldeebhasan/laravel-cache-flusher",
-  "description": "A lightweight package to manage the cache operations and clear invalidated caches when the related or cached data are changed",
+  "description": "A lightweight package to invalidate cache entries automatically when the cached data changed.",
   "type": "library",
   "version": "1.0.0",
   "license": "MIT",
@@ -47,6 +47,9 @@
     }
   },
   "scripts": {
-    "fix": "php-cs-fixer fix src"
+    "fix": "php-cs-fixer fix src",
+    "post-install-cmd": [
+      "@php artisan vendor:publish --tag=cache-flusher-config"
+    ]
   }
 }
