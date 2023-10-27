@@ -40,16 +40,13 @@
   "extra": {
     "laravel": {
       "providers": [
-        "LaravelCacheFlusherProvider"
+        "Aldeebhasan\\LaravelCacheFlusher\\LaravelCacheFlusherProvider"
       ],
       "aliases": {
       }
     }
   },
   "scripts": {
-    "fix": "php-cs-fixer fix src",
-    "post-install-cmd": [
-      "@php artisan vendor:publish --tag=cache-flusher-config"
-    ]
+    "fix": "php-cs-fixer fix src"
   }
 }

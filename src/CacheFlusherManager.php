@@ -10,6 +10,7 @@ class CacheFlusherManager
     private array $mapping = [];
 
     private Repository $cacheManager;
+    private string $file = 'cache-flusher/cache.json';
 
     public function initialize(): void
     {
@@ -23,9 +24,14 @@ class CacheFlusherManager
         return config('cache-flusher.enabled', false);
     }
 
-    private function getKeys(): array
+    public function getKeys(): array
     {
-        return Storage::json('cache-flusher/cache.json') ?? [];
+        $storage = Storage::disk('local');
+        if ($storage->exists($this->file)) {
+            $data = $storage->get($this->file);
+            return json_decode($data) ?? [];
+        }
+        return [];
     }
 
     private function saveKeys($data): void
@@ -82,10 +88,12 @@ class CacheFlusherManager
     private function needToCoolDown($model): bool
     {
         $modelClassName = last(explode('\\', $model));
+        $modelClassName = strtolower($modelClassName);
         $cacheCooldown = config('cache-flusher.cool-down');
-        if (!$cacheCooldown) return false;
 
+        if (!$cacheCooldown) return false;
         $invalidatedAt = $this->cacheManager->get("$modelClassName-cooldown");
+
         if (!$invalidatedAt) return false;
         return now()->diffInSeconds($invalidatedAt) < $cacheCooldown;
 
@@ -94,6 +102,7 @@ class CacheFlusherManager
     private function configureCoolDown($model): void
     {
         $modelClassName = last(explode('\\', $model));
+        $modelClassName = strtolower($modelClassName);
         $cacheCooldown = config('cache-flusher.cool-down');
         if (!$cacheCooldown) return;
 

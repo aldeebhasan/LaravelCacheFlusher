@@ -23,6 +23,11 @@ Install using composer:
 composer require aldeebhasan/laravel-cache-flusher
 ```
 
+After installation run the following code to publish the config: 
+```
+php artisan vendor:publish --tag=cache-flusher
+```
+
 Basic Usage
 -----------
 It is very simple to use this package,
