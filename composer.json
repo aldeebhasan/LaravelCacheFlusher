@@ -2,7 +2,6 @@
   "name": "aldeebhasan/laravel-cache-flusher",
   "description": "A lightweight package to invalidate cache entries automatically when the cached data changed.",
   "type": "library",
-  "version": "1.0.0",
   "license": "MIT",
   "keywords": [
     "cache",
