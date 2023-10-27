@@ -47,6 +47,7 @@
     }
   },
   "scripts": {
-    "fix": "php-cs-fixer fix src"
+    "fix": "php-cs-fixer fix src",
+    "test": "vendor/bin/phpunit tests/Unit/CacheFlusherTest.php"
   }
 }

@@ -19,7 +19,7 @@ class CacheFlusherTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->cacheManager = cache()->driver('array');
+        $this->cacheManager = cache()->driver('file');
     }
 
     private function setCustomConfig(array $config): void

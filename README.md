@@ -43,7 +43,8 @@ in your .env file.
 ### 2) driver (default : your default cache driver)
 
 It will be used to specify the cache driver the package will work with,
-it is preferable to use the cache driver similar to the one you used in your project.
+it is preferable to use the cache driver similar to the one you used in your project 
+(to make sure that all the operations done on the same cache driver).
 you can control its value using the entry `CACHE_FLUSHER_DRIVER`
 in your .env file.
 
