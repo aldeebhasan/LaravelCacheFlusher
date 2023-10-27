@@ -13,7 +13,7 @@ class LaravelCacheFlusherProvider extends ServiceProvider
     public function boot()
     {
         $this->publishes([
-            __DIR__ . '/../config/cache-flusher.php' => config_path('cache-flusher.php'),
+            __DIR__.'/../config/cache-flusher.php' => config_path('cache-flusher.php'),
         ], 'cache-flusher');
 
         $this->registerCacheFlusher();
@@ -24,11 +24,11 @@ class LaravelCacheFlusherProvider extends ServiceProvider
     {
 
         $this->mergeConfigFrom(
-            __DIR__ . '/../config/cache-flusher.php',
+            __DIR__.'/../config/cache-flusher.php',
             'cache-flusher-config'
         );
 
-        $this->app->singleton('cache-flusher', CacheFlusherManager::class,);
+        $this->app->singleton('cache-flusher', CacheFlusherManager::class, );
     }
 
     private function registerCacheFlusher(): void
@@ -36,9 +36,8 @@ class LaravelCacheFlusherProvider extends ServiceProvider
         if (CacheFlusher::enabled()) {
             Event::listen(
                 ['eloquent.updated: *', 'eloquent.created: *', 'eloquent.deleted: *', 'eloquent.saved: *'],
-                function (string $event,$model) {
-                    $model = last(explode(': ', $event));
-                    if (class_exists($model)) {
+                function (string $event, $models) {
+                    if ($model = last($models)) {
                         CacheFlusher::process($model);
                     }
                 }

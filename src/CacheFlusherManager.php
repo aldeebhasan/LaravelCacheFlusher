@@ -3,13 +3,17 @@
 namespace Aldeebhasan\LaravelCacheFlusher;
 
 use Illuminate\Contracts\Cache\Repository;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Storage;
 
 class CacheFlusherManager
 {
     private array $mapping = [];
 
+    private $bindingFn = null;
+
     private Repository $cacheManager;
+
     private string $file = 'cache-flusher/cache.json';
 
     public function initialize(): void
@@ -24,13 +28,15 @@ class CacheFlusherManager
         return config('cache-flusher.enabled', false);
     }
 
-    public function getKeys(): array
+    private function getKeys(): array
     {
         $storage = Storage::disk('local');
         if ($storage->exists($this->file)) {
             $data = $storage->get($this->file);
+
             return json_decode($data) ?? [];
         }
+
         return [];
     }
 
@@ -64,20 +70,40 @@ class CacheFlusherManager
         $this->saveKeys([]);
     }
 
-    public function process(string $model): void
+    public function process(Model $model): void
     {
-        if ($this->needToCoolDown($model)) return;
+        $modelClassName = strtolower(class_basename($model));
+        $modelClass = get_class($model);
+        if ($this->needToCoolDown($modelClassName)) return;
 
         $keys = $this->getKeys();
         foreach ($this->mapping as $key => $map) {
-            if (in_array($model, $map)) {
+            if (in_array($modelClass, $map)) {
+                $key = $this->handleWithBinding($key, $model);
                 $this->handleSingleKey($keys, $key);
-                $this->configureCoolDown($model);
+                $this->configureCoolDown($modelClassName);
             }
         }
     }
 
-    public function handleSingleKey($keys, $patten): void
+    private function handleWithBinding(string $patten, Model $model): string
+    {
+        if (!$this->bindingFn || !is_callable($this->bindingFn)) return $patten;
+
+        $matches = [];
+        preg_match_all("/{\w+}/", $patten, $matches);
+        foreach (array_shift($matches) as $bindKey) {
+            $key = str_replace(['{', '}'], '', $bindKey);
+            $bindingValue = call_user_func($this->bindingFn, $key, $model);
+            if ($bindingValue)
+                $patten = str_replace($bindKey, $bindingValue, $patten);
+        }
+
+        return $patten;
+
+    }
+
+    public function handleSingleKey(array $keys, string $patten): void
     {
         $matches = preg_grep("/^$patten/i", $keys);
         foreach ($matches as $key) {
@@ -85,31 +111,33 @@ class CacheFlusherManager
         }
     }
 
-    private function needToCoolDown($model): bool
+    private function needToCoolDown(string $modelClassName): bool
     {
-        $modelClassName = last(explode('\\', $model));
-        $modelClassName = strtolower($modelClassName);
-        $cacheCooldown = config('cache-flusher.cool-down');
+        $cacheCoolDown = config('cache-flusher.cool-down');
 
-        if (!$cacheCooldown) return false;
+        if (!$cacheCoolDown) return false;
         $invalidatedAt = $this->cacheManager->get("$modelClassName-cooldown");
 
         if (!$invalidatedAt) return false;
-        return now()->diffInSeconds($invalidatedAt) < $cacheCooldown;
+
+        return now()->diffInSeconds($invalidatedAt) < $cacheCoolDown;
 
     }
 
-    private function configureCoolDown($model): void
+    private function configureCoolDown(string $modelClassName): void
     {
-        $modelClassName = last(explode('\\', $model));
-        $modelClassName = strtolower($modelClassName);
-        $cacheCooldown = config('cache-flusher.cool-down');
-        if (!$cacheCooldown) return;
+        $cacheCoolDown = config('cache-flusher.cool-down');
+        if (!$cacheCoolDown) return;
 
         $this->cacheManager->put(
             "$modelClassName-cooldown",
-            now()->addSeconds($cacheCooldown)->toDateTimeString()
+            now()->addSeconds($cacheCoolDown)->toDateTimeString()
         );
 
+    }
+
+    public function setBindingFunction(\Closure $closure): void
+    {
+        $this->bindingFn = $closure;
     }
 }

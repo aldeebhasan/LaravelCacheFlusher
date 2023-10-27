@@ -7,6 +7,7 @@ use Aldeebhasan\LaravelCacheFlusher\Facades\CacheFlusher;
 use Aldeebhasan\LaravelCacheFlusher\Test\TestCase;
 use Illuminate\Contracts\Cache\Repository;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Foundation\Auth\User;
 use Illuminate\Foundation\Testing\WithFaker;
 use Mockery\MockInterface;
 
@@ -28,6 +29,7 @@ class CacheFlusherTest extends TestCase
         config()->set('cache-flusher', $config);
         CacheFlusher::initialize();
         CacheFlusher::flush();
+        $this->cacheManager->clear();
     }
 
     private function initKeys(array $keys): void
@@ -76,32 +78,32 @@ class CacheFlusherTest extends TestCase
     {
         $this->setCustomConfig([
             'mapping' => [
-                '(test\..+|test_2\.v1\.*)' => [Model::class],
+                '(test\..+|test_2\.v1\.*)' => [User::class],
             ]
         ]);
 
         $keys = ['test', 'test.1', 'test.2', 'test_2.v1.1', 'test_2.v2.1'];
         $this->initKeys($keys);
 
-        event('eloquent.created: ' . Model::class, Model::class);
+        event('eloquent.created: ' . User::class, new User);
 
         $storeKeys = $this->getStoredKeys();
         self::assertEquals(['test', 'test_2.v2.1'], $storeKeys);
     }
 
-    public function test_check_processes_of__multi_model_create()
+    public function test_check_processes_of_multi_model_create()
     {
         $this->setCustomConfig([
             'mapping' => [
-                '(test\..+|test_2\.v1\.*)' => [Model::class],
+                '(test\..+|test_2\.v1\.*)' => [User::class],
             ],
             'cool-down' => '5'
         ]);
 
 
         CacheFlusher::shouldReceive('process')->twice();
-        event('eloquent.created: ' . Model::class, Model::class);
-        event('eloquent.created: ' . Model::class, Model::class);
+        event('eloquent.created: ' . User::class, new User);
+        event('eloquent.created: ' . User::class, new User);
 
     }
 
@@ -109,7 +111,7 @@ class CacheFlusherTest extends TestCase
     {
         $this->setCustomConfig([
             'mapping' => [
-                '(test\..+|test_2\.v1\.*)' => [Model::class],
+                '(test\..+|test_2\.v1\.*)' => [User::class],
             ],
             'cool-down' => '5'
         ]);
@@ -120,15 +122,15 @@ class CacheFlusherTest extends TestCase
                 $mock->shouldReceive('handleSingleKey')->once();
             });
         $mock->initialize();
-        $mock->process(Model::class);
-        $mock->process(Model::class);
+        $mock->process(new User);
+        $mock->process(new User);
     }
 
     public function test_cool_down_flush()
     {
         $this->setCustomConfig([
             'mapping' => [
-                '(test\..+|test_2\.v1\.*)' => [Model::class],
+                '(test\..+|test_2\.v1\.*)' => [User::class],
             ],
             'cool-down' => '1'
         ]);
@@ -139,11 +141,43 @@ class CacheFlusherTest extends TestCase
                 $mock->shouldReceive('handleSingleKey')->twice();
             });
         $mock->initialize();
-        $mock->process(Model::class);
-        $mock->process(Model::class);
+        $mock->process(new User);
+        $mock->process(new User);
 
         sleep(2);
-        $mock->process(Model::class);
+        $mock->process(new User);
+    }
+
+    public function test_auto_binding()
+    {
+
+        $this->setCustomConfig([
+            'mapping' => [
+                '^companies\.{company_id}\.stores' => [User::class],
+                '^companies\.{company_id}\.mobiles\.{user_id}' => [User::class],
+            ]
+        ]);
+        CacheFlusher::setBindingFunction(
+            function (string $bindingKey, Model $model): ?string {
+                switch ($bindingKey) {
+                    case "company_id":
+                        return '1'; //$model->company_id
+                    case "user_id":
+                        if ($model instanceof User)
+                            return "2"; // $model->user_id;
+                        break;
+                }
+                return null;
+            });
+
+        $keys = ['companies.1.stores', 'companies.2.stores', 'companies.1.mobiles', 'companies.1.mobiles.2.products'];
+        $this->initKeys($keys);
+
+        $user = tap(new User(), fn($user) => $user->company_id = 1);
+        event('eloquent.created: ' . User::class, $user);
+
+        $storeKeys = $this->getStoredKeys();
+        self::assertEquals(['companies.2.stores', 'companies.1.mobiles'], $storeKeys);
     }
 
 }
